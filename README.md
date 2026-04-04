@@ -49,7 +49,7 @@ PDF Commander is a local desktop application that brings together the most commo
 - All module files must be in the same directory:
 
 ```
-PDFCommander.py
+Home.py
 PDFEditor.py
 PDFMerger.py
 PDFSplitter.py
@@ -69,7 +69,7 @@ cd pdf-commander
 pip install -r requirements.txt
 
 # Launch the app
-python PDFCommander.py
+python Home.py
 ```
 
 ### DOCX Conversion
@@ -81,7 +81,7 @@ DOCX to PDF conversion requires Microsoft Word to be installed on the machine. T
 PDF Commander supports opening a file directly from the command line. When launched with a `.pdf` path as an argument, it skips the dashboard and opens the file immediately in the Viewer.
 
 ```bash
-python PDFCommander.py "C:\path\to\your\file.pdf"
+python Home.py "C:\path\to\your\file.pdf"
 ```
 
 You can also associate `.pdf` files with PDF Commander in Windows so that double-clicking any PDF opens it directly in the Viewer.
@@ -90,7 +90,7 @@ You can also associate `.pdf` files with PDF Commander in Windows so that double
 
 ## Usage
 
-Launch `PDFCommander.py` to open the Tools Dashboard. Click any tool card to open it. Each tool runs in its own window. Closing a tool window returns you to the dashboard.
+Launch `Home.py` to open the Tools Dashboard. Click any tool card to open it. Each tool runs in its own window. Closing a tool window returns you to the dashboard.
 
 | Tool | Input | Output |
 |---|---|---|
@@ -106,15 +106,17 @@ Launch `PDFCommander.py` to open the Tools Dashboard. Click any tool card to ope
 
 ```
 pdf-commander/
-├── PDFCommander.py     # Main launcher and dashboard
-├── PDFEditor.py        # PDF editing module
-├── PDFMerger.py        # PDF merging module
-├── PDFSplitter.py      # PDF splitting module
-├── PDFConverter.py     # PDF conversion module
-├── PDFViewer.py        # PDF viewer module
-├── Commander.ico       # Application icon
-├── requirements.txt    # Python dependencies
-└── setup.py            # Executable build configuration
+├── Home.py                 # Main launcher and dashboard
+├── Home.spec               # PyInstaller build config for dashboard
+├── PDFCommander.spec       # PyInstaller build config for entry point
+├── PDFEditor.py            # PDF editing module
+├── PDFMerger.py            # PDF merging module
+├── PDFSplitter.py          # PDF splitting module
+├── PDFConverter.py         # PDF conversion module
+├── PDFViewer.py            # PDF viewer module
+├── Commander.ico           # Application icon
+├── SetupFileSettings.iss   # Inno Setup installer script
+└── requirements.txt        # Python dependencies
 ```
 
 ---
