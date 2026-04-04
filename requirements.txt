@@ -1,0 +1,9 @@
+# PDF Commander - Requirements
+# Install with: pip install -r requirements.txt
+
+# Core PDF engine — rendering, editing, merging, splitting, image conversion
+PyMuPDF>=1.23.0
+
+# DOCX to PDF conversion (requires Microsoft Word to be installed on the machine)
+# Safe to install even if Word is not present — the app handles the missing dependency gracefully
+docx2pdf>=0.1.8
