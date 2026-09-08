@@ -3,6 +3,7 @@
 ; Non-commercial use only
 
 #define MyAppName "PDFCommand"
+#define MyAppName "PDF Commander"
 #define MyAppVersion "1.0"
 #define MyAppPublisher "N/A"
 #define MyAppURL "N/A"
@@ -10,10 +11,17 @@
 #define MyAppAssocName MyAppName + " File"
 #define MyAppAssocExt ".myp"
 #define MyAppAssocKey StringChange(MyAppAssocName, " ", "") + MyAppAssocExt
+#define MyAppPublisher "PDF Commander"
+#define MyAppURL "https://github.com/Cycromous/PDFCommand"
+#define MyAppExeName "PDFCommander.exe"
+#define MyAppAssocName "PDF Document"
+#define MyAppAssocExt ".pdf"
+#define MyAppAssocKey "PDFCommander.Document"
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application. Do not use the same AppId value in installers for other applications.
 ; (To generate a new GUID, click Tools | Generate GUID inside the IDE.)
+; NOTE: The value of AppId uniquely identifies this application.
 AppId={{D72A6925-AD5E-40C5-803E-2898DB100067}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
@@ -40,8 +48,12 @@ PrivilegesRequiredOverridesAllowed=dialog
 OutputDir=C:\Users\johnr\OneDrive\Desktop
 OutputBaseFilename=PDFCommand Setup
 SetupIconFile=C:\Users\johnr\OneDrive\Documents\Repositories\Personal\PDFCommand\Commander.ico
+OutputDir=Output
+OutputBaseFilename=PDFCommand-Setup
+SetupIconFile=Commander.ico
 SolidCompression=yes
 WizardStyle=modern zircon
+WizardStyle=modern
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
@@ -53,6 +65,8 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 Source: "C:\Users\johnr\OneDrive\Documents\Repositories\Personal\PDFCommand\dist\Home\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\Users\johnr\OneDrive\Documents\Repositories\Personal\PDFCommand\dist\Home\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
+Source: "dist\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "Commander.ico"; DestDir: "{app}"; Flags: ignoreversion
 
 [Registry]
 Root: HKA; Subkey: "Software\Classes\{#MyAppAssocExt}\OpenWithProgids"; ValueType: string; ValueName: "{#MyAppAssocKey}"; ValueData: ""; Flags: uninsdeletevalue
