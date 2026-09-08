@@ -1,8 +1,14 @@
+import os
 import tkinter as tk
 from tkinter import filedialog, messagebox
 import fitz
 import os
 import sys
+
+import fitz  # PyMuPDF
+
+from theme import BG_GRAY, TOOLBAR_COLOR, TEXT_COLOR
+from ui_helpers import create_rounded_button
 
 try:
     from docx2pdf import convert as convert_docx
@@ -34,6 +40,11 @@ class ModernPDFConverter:
         
         self.root.protocol("WM_DELETE_WINDOW", self.on_close)
         
+
+class ConverterFrame(tk.Frame):
+    def __init__(self, parent, controller):
+        super().__init__(parent, bg=BG_GRAY)
+        self.controller = controller
         self.files_to_convert = []
         self.setup_gui()
 
@@ -47,6 +58,7 @@ class ModernPDFConverter:
             self.root.withdraw() 
         else:
             self.root.destroy()
+        self.controller.show_frame("home")
 
     def on_close(self):
         if self.main_app_window:
@@ -74,9 +86,11 @@ class ModernPDFConverter:
     def setup_gui(self):
         self.toolbar_color = "#93E9BE"
         toolbar = tk.Frame(self.root, bg=self.toolbar_color, bd=0)
+        toolbar = tk.Frame(self, bg=TOOLBAR_COLOR, bd=0)
         toolbar.pack(fill=tk.X, side=tk.TOP, pady=(0, 0))
 
         inner_toolbar = tk.Frame(toolbar, bg=self.toolbar_color, pady=12, padx=15)
+        inner_toolbar = tk.Frame(toolbar, bg=TOOLBAR_COLOR, pady=12, padx=15)
         inner_toolbar.pack(fill=tk.X)
 
         tk.Button(inner_toolbar, text="Home", command=self.go_home, bg=self.toolbar_color, fg="#1F2937", font=("Segoe UI", 10, "bold"), bd=0, activebackground=self.toolbar_color, cursor="hand2").pack(side=tk.LEFT, padx=(0, 15))
@@ -86,14 +100,34 @@ class ModernPDFConverter:
         
         self.btn_convert = self.create_rounded_button(inner_toolbar, text="Convert to PDF", bg_color="#111827", fg_color="#FFFFFF", command=self.process_conversion, width=160)
         self.btn_convert.pack(side=tk.RIGHT, padx=5)
+        tk.Button(inner_toolbar, text="Home", command=self.go_home, bg=TOOLBAR_COLOR, fg=TEXT_COLOR,
+                  font=("Segoe UI", 10, "bold"), bd=0, activebackground=TOOLBAR_COLOR,
+                  cursor="hand2").pack(side=tk.LEFT, padx=(0, 15))
 
         self.lbl_status = tk.Label(inner_toolbar, text="", bg=self.toolbar_color, fg="#1F2937", font=("Segoe UI", 10, "bold"))
+        btn_add = create_rounded_button(inner_toolbar, "Add Files", "#FFFFFF", "#374151",
+                                         self.add_files, width=140, canvas_bg=TOOLBAR_COLOR)
+        btn_add[0].pack(side=tk.LEFT, padx=(0, 10))
+
+        btn_clear = create_rounded_button(inner_toolbar, "Clear List", "#FFFFFF", "#DC2626",
+                                           self.clear_files, width=140, canvas_bg=TOOLBAR_COLOR)
+        btn_clear[0].pack(side=tk.LEFT, padx=(0, 10))
+
+        self.btn_convert = create_rounded_button(inner_toolbar, "Convert to PDF", "#111827", "#FFFFFF",
+                                                  self.process_conversion, width=160, canvas_bg=TOOLBAR_COLOR)
+        self.btn_convert[0].pack(side=tk.RIGHT, padx=5)
+
+        self.lbl_status = tk.Label(inner_toolbar, text="", bg=TOOLBAR_COLOR, fg=TEXT_COLOR,
+                                    font=("Segoe UI", 10, "bold"))
         self.lbl_status.pack(side=tk.RIGHT, padx=15)
 
         content_frame = tk.Frame(self.root, bg="#F0F2F5", pady=40, padx=50)
+        content_frame = tk.Frame(self, bg=BG_GRAY, pady=40, padx=50)
         content_frame.pack(fill=tk.BOTH, expand=True)
 
         tk.Label(content_frame, text="Files to Convert", font=("Segoe UI", 18, "bold"), bg="#F0F2F5", fg="#1F2937").pack(anchor="w", pady=(0, 10))
+        tk.Label(content_frame, text="Files to Convert", font=("Segoe UI", 18, "bold"), bg=BG_GRAY,
+                 fg=TEXT_COLOR).pack(anchor="w", pady=(0, 10))
 
         list_frame = tk.Frame(content_frame, bg="#FFFFFF", highlightthickness=1, highlightbackground="#E5E7EB")
         list_frame.pack(fill=tk.BOTH, expand=True)
@@ -102,6 +136,9 @@ class ModernPDFConverter:
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
         self.listbox = tk.Listbox(list_frame, yscrollcommand=scrollbar.set, font=("Segoe UI", 11), bg="#FFFFFF", fg="#374151", selectbackground="#A8DFC5", selectforeground="#000000", relief=tk.FLAT, highlightthickness=0)
+        self.listbox = tk.Listbox(list_frame, yscrollcommand=scrollbar.set, font=("Segoe UI", 11),
+                                   bg="#FFFFFF", fg="#374151", selectbackground="#A8DFC5",
+                                   selectforeground="#000000", relief=tk.FLAT, highlightthickness=0)
         self.listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=10, pady=10)
         scrollbar.config(command=self.listbox.yview)
 
@@ -110,14 +147,17 @@ class ModernPDFConverter:
             ("Supported Files", "*.docx;*.png;*.jpg;*.jpeg;*.bmp"),
             ("Word Documents", "*.docx"),
             ("Images", "*.png;*.jpg;*.jpeg;*.bmp")
+            ("Images", "*.png;*.jpg;*.jpeg;*.bmp"),
         ]
         filepaths = filedialog.askopenfilenames(title="Select Files to Convert", filetypes=filetypes)
         
+
         for path in filepaths:
             if path not in self.files_to_convert:
                 self.files_to_convert.append(path)
                 filename = os.path.basename(path)
                 self.listbox.insert(tk.END, filename)
+                self.listbox.insert(tk.END, os.path.basename(path))
 
     def clear_files(self):
         self.files_to_convert.clear()
@@ -129,6 +169,7 @@ class ModernPDFConverter:
             messagebox.showwarning("Empty List", "Please add files to convert first.")
             return
             
+
         if any(f.lower().endswith(".docx") for f in self.files_to_convert) and convert_docx is None:
             messagebox.showerror("Missing Dependency", "To convert DOCX files, you must run 'pip install docx2pdf' in your terminal.")
             return
@@ -139,9 +180,11 @@ class ModernPDFConverter:
 
         self.lbl_status.config(text="Converting... Please wait.", fg="#D97706")
         self.root.update_idletasks()
+        self.update_idletasks()
 
         success_count = 0
         
+
         for file_path in self.files_to_convert:
             filename = os.path.basename(file_path)
             base_name, ext = os.path.splitext(filename)
@@ -166,7 +209,15 @@ class ModernPDFConverter:
         self.lbl_status.config(text=f"Successfully converted {success_count} files.", fg="#059669")
         messagebox.showinfo("Done", f"Conversion complete.\n\nFiles saved to:\n{save_dir}")
 
+
+# Backward compatibility alias
+ModernPDFConverter = ConverterFrame
+
 if __name__ == "__main__":
+    from app_controller import PDFCommanderApp
+
     root = tk.Tk()
     app = ModernPDFConverter(root)
+    app = PDFCommanderApp(root)
+    app.show_frame("converter")
     root.mainloop()
