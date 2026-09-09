@@ -1,9 +1,7 @@
 import os
+import sys
 import tkinter as tk
 from tkinter import filedialog, messagebox
-import fitz
-import os
-import sys
 
 import fitz  # PyMuPDF
 
@@ -15,31 +13,6 @@ try:
 except ImportError:
     convert_docx = None
 
-class ModernPDFConverter:
-    def __init__(self, root, main_app_window=None):
-        self.root = root
-        self.main_app_window = main_app_window
-        self.root.title("PDF Converter")
-        
-        try:
-            base_path = sys._MEIPASS if getattr(sys, 'frozen', False) else os.path.abspath(".")
-            self.root.iconbitmap(os.path.join(base_path, "Commander.ico"))
-        except:
-            pass
-        
-        self.root.configure(bg="#F0F2F5")
-        
-        screen_width = self.root.winfo_screenwidth()
-        screen_height = self.root.winfo_screenheight()
-        self.root.geometry(f"{screen_width}x{screen_height}")
-        
-        try:
-            self.root.state('zoomed')
-        except:
-            pass 
-        
-        self.root.protocol("WM_DELETE_WINDOW", self.on_close)
-        
 
 class ConverterFrame(tk.Frame):
     def __init__(self, parent, controller):
@@ -49,62 +22,19 @@ class ConverterFrame(tk.Frame):
         self.setup_gui()
 
     def go_home(self):
-        if self.main_app_window:
-            self.main_app_window.deiconify() 
-            try:
-                self.main_app_window.state('zoomed')
-            except:
-                pass
-            self.root.withdraw() 
-        else:
-            self.root.destroy()
         self.controller.show_frame("home")
 
-    def on_close(self):
-        if self.main_app_window:
-            self.main_app_window.destroy()
-        self.root.destroy()
-
-    def create_rounded_button(self, parent, text, bg_color, fg_color, command, width=140, height=36):
-        canvas = tk.Canvas(parent, width=width, height=height, bg="#93E9BE", highlightthickness=0, bd=0)
-        radius = height / 2
-        x1, y1, x2, y2 = 2, 2, width-2, height-2
-        points = [
-            x1+radius, y1, x2-radius, y1, x2, y1, x2, y1+radius,
-            x2, y2-radius, x2, y2, x2-radius, y2, x1+radius, y2,
-            x1, y2, x1, y2-radius, x1, y1+radius, x1, y1
-        ]
-        
-        shape = canvas.create_polygon(points, smooth=True, fill=bg_color)
-        canvas.create_text(width/2, height/2, text=text, fill=fg_color, font=("Segoe UI", 10, "bold"))
-        
-        def on_click(e): command()
-        canvas.bind("<Button-1>", on_click)
-        canvas.configure(cursor="hand2")
-        return canvas
-
     def setup_gui(self):
-        self.toolbar_color = "#93E9BE"
-        toolbar = tk.Frame(self.root, bg=self.toolbar_color, bd=0)
         toolbar = tk.Frame(self, bg=TOOLBAR_COLOR, bd=0)
         toolbar.pack(fill=tk.X, side=tk.TOP, pady=(0, 0))
 
-        inner_toolbar = tk.Frame(toolbar, bg=self.toolbar_color, pady=12, padx=15)
         inner_toolbar = tk.Frame(toolbar, bg=TOOLBAR_COLOR, pady=12, padx=15)
         inner_toolbar.pack(fill=tk.X)
 
-        tk.Button(inner_toolbar, text="Home", command=self.go_home, bg=self.toolbar_color, fg="#1F2937", font=("Segoe UI", 10, "bold"), bd=0, activebackground=self.toolbar_color, cursor="hand2").pack(side=tk.LEFT, padx=(0, 15))
-        
-        self.create_rounded_button(inner_toolbar, text="Add Files", bg_color="#FFFFFF", fg_color="#374151", command=self.add_files, width=140).pack(side=tk.LEFT, padx=(0, 10))
-        self.create_rounded_button(inner_toolbar, text="Clear List", bg_color="#FFFFFF", fg_color="#DC2626", command=self.clear_files, width=140).pack(side=tk.LEFT, padx=(0, 10))
-        
-        self.btn_convert = self.create_rounded_button(inner_toolbar, text="Convert to PDF", bg_color="#111827", fg_color="#FFFFFF", command=self.process_conversion, width=160)
-        self.btn_convert.pack(side=tk.RIGHT, padx=5)
         tk.Button(inner_toolbar, text="Home", command=self.go_home, bg=TOOLBAR_COLOR, fg=TEXT_COLOR,
                   font=("Segoe UI", 10, "bold"), bd=0, activebackground=TOOLBAR_COLOR,
                   cursor="hand2").pack(side=tk.LEFT, padx=(0, 15))
 
-        self.lbl_status = tk.Label(inner_toolbar, text="", bg=self.toolbar_color, fg="#1F2937", font=("Segoe UI", 10, "bold"))
         btn_add = create_rounded_button(inner_toolbar, "Add Files", "#FFFFFF", "#374151",
                                          self.add_files, width=140, canvas_bg=TOOLBAR_COLOR)
         btn_add[0].pack(side=tk.LEFT, padx=(0, 10))
@@ -121,11 +51,9 @@ class ConverterFrame(tk.Frame):
                                     font=("Segoe UI", 10, "bold"))
         self.lbl_status.pack(side=tk.RIGHT, padx=15)
 
-        content_frame = tk.Frame(self.root, bg="#F0F2F5", pady=40, padx=50)
         content_frame = tk.Frame(self, bg=BG_GRAY, pady=40, padx=50)
         content_frame.pack(fill=tk.BOTH, expand=True)
 
-        tk.Label(content_frame, text="Files to Convert", font=("Segoe UI", 18, "bold"), bg="#F0F2F5", fg="#1F2937").pack(anchor="w", pady=(0, 10))
         tk.Label(content_frame, text="Files to Convert", font=("Segoe UI", 18, "bold"), bg=BG_GRAY,
                  fg=TEXT_COLOR).pack(anchor="w", pady=(0, 10))
 
@@ -135,7 +63,6 @@ class ConverterFrame(tk.Frame):
         scrollbar = tk.Scrollbar(list_frame)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
-        self.listbox = tk.Listbox(list_frame, yscrollcommand=scrollbar.set, font=("Segoe UI", 11), bg="#FFFFFF", fg="#374151", selectbackground="#A8DFC5", selectforeground="#000000", relief=tk.FLAT, highlightthickness=0)
         self.listbox = tk.Listbox(list_frame, yscrollcommand=scrollbar.set, font=("Segoe UI", 11),
                                    bg="#FFFFFF", fg="#374151", selectbackground="#A8DFC5",
                                    selectforeground="#000000", relief=tk.FLAT, highlightthickness=0)
@@ -146,17 +73,13 @@ class ConverterFrame(tk.Frame):
         filetypes = [
             ("Supported Files", "*.docx;*.png;*.jpg;*.jpeg;*.bmp"),
             ("Word Documents", "*.docx"),
-            ("Images", "*.png;*.jpg;*.jpeg;*.bmp")
             ("Images", "*.png;*.jpg;*.jpeg;*.bmp"),
         ]
         filepaths = filedialog.askopenfilenames(title="Select Files to Convert", filetypes=filetypes)
-        
 
         for path in filepaths:
             if path not in self.files_to_convert:
                 self.files_to_convert.append(path)
-                filename = os.path.basename(path)
-                self.listbox.insert(tk.END, filename)
                 self.listbox.insert(tk.END, os.path.basename(path))
 
     def clear_files(self):
@@ -168,7 +91,6 @@ class ConverterFrame(tk.Frame):
         if not self.files_to_convert:
             messagebox.showwarning("Empty List", "Please add files to convert first.")
             return
-            
 
         if any(f.lower().endswith(".docx") for f in self.files_to_convert) and convert_docx is None:
             messagebox.showerror("Missing Dependency", "To convert DOCX files, you must run 'pip install docx2pdf' in your terminal.")
@@ -179,11 +101,9 @@ class ConverterFrame(tk.Frame):
             return
 
         self.lbl_status.config(text="Converting... Please wait.", fg="#D97706")
-        self.root.update_idletasks()
         self.update_idletasks()
 
         success_count = 0
-        
 
         for file_path in self.files_to_convert:
             filename = os.path.basename(file_path)
@@ -217,7 +137,6 @@ if __name__ == "__main__":
     from app_controller import PDFCommanderApp
 
     root = tk.Tk()
-    app = ModernPDFConverter(root)
     app = PDFCommanderApp(root)
     app.show_frame("converter")
     root.mainloop()
