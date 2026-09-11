@@ -221,3 +221,4 @@ if __name__ == "__main__":
     app = PDFCommanderApp(root)
     app.show_frame("converter")
     root.mainloop()
+    root.mainloop()
