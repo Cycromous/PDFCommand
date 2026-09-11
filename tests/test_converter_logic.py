@@ -14,7 +14,7 @@ def test_image_to_pdf_conversion():
         out_pdf_path = os.path.join(tmpdir, "output.pdf")
 
         # Generate a small test PNG image using PyMuPDF Pixmap
-        pix = fitz.Pixmap(fitz.csRGB, 100, 80, False)
+        pix = fitz.Pixmap(fitz.csRGB, fitz.IRect(0, 0, 100, 80))
         pix.clear_with(255)  # white background
         pix.save(img_path)
 
