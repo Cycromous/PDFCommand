@@ -7,7 +7,7 @@ try:
 except ImportError:
     import fitz  # type: ignore[import-not-found]
 
-import pytest
+import pytest  # type: ignore[import-not-found]
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "PDFCommand")))
 
@@ -23,21 +23,23 @@ def test_image_to_pdf_conversion():
         pix.clear_with(255)  # white background
         pix.save(img_path)
 
-        # Replicate Converter conversion logic
-        img_doc = fitz.open(img_path)
-        pdf_bytes = img_doc.convert_to_pdf()
-        img_pdf = fitz.open("pdf", pdf_bytes)
-        img_pdf.save(out_pdf_path)
-        img_pdf.close()
-        img_doc.close()
+        # Replicate Converter conversion logic with context managers
+        with fitz.open(img_path) as img_doc:
+            pdf_bytes = img_doc.convert_to_pdf()
+
+        with fitz.open("pdf", pdf_bytes) as img_pdf:
+            img_pdf.save(out_pdf_path)
 
         # Validate that the generated PDF exists and has 1 page
         assert os.path.exists(out_pdf_path)
-        converted_doc = fitz.open(out_pdf_path)
-        assert len(converted_doc) == 1
-        assert converted_doc[0].rect.width == 100
-        assert converted_doc[0].rect.height == 80
-        converted_doc.close()
+
+        with fitz.open(out_pdf_path) as converted_doc:
+            assert len(converted_doc) == 1
+
+            # PyMuPDF converts the 100x80 image using 96 DPI:
+            # 100 * 72 / 96 = 75 pt, 80 * 72 / 96 = 60 pt
+            assert converted_doc[0].rect.width == pytest.approx(75)
+            assert converted_doc[0].rect.height == pytest.approx(60)
 
 
 def test_converter_supported_extensions():
@@ -57,4 +59,3 @@ def test_converter_supported_extensions():
         _, ext = os.path.splitext(fname)
         matches = ext.lower() in supported
         assert matches == is_supported, f"Extension check failed for {fname}"
-
