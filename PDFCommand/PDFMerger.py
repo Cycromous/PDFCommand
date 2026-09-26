@@ -252,3 +252,4 @@ if __name__ == "__main__":
     app = PDFCommanderApp(root)
     app.show_frame("merger")
     root.mainloop()
+    root.mainloop()
