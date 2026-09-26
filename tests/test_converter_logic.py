@@ -1,7 +1,12 @@
 import os
 import sys
 import tempfile
-import fitz
+
+try:
+    import pymupdf as fitz  # type: ignore[import-not-found]
+except ImportError:
+    import fitz  # type: ignore[import-not-found]
+
 import pytest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "PDFCommand")))
