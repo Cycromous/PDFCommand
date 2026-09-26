@@ -1,203 +1,167 @@
 import os
-import ctypes
 import sys
 import tkinter as tk
-from tkinter import messagebox
-import tkinter.font as tkFont
 
-try:
-    from PDFEditor import ModernPDFEditor
-    from PDFMerger import ModernPDFMerger
-    from PDFSplitter import ModernPDFSplitter
-    from PDFConverter import ModernPDFConverter
-    from PDFViewer import ModernPDFViewer
-except ImportError as e:
-    messagebox.showerror("Error", f"Could not find a necessary module:\n\n{e}\n\nPlease ensure PDFEditor.py, PDFMerger.py, PDFSplitter.py, and PDFViewer.py are in this folder.")
-    sys.exit()
-
-if not getattr(sys, 'frozen', False):
-    base_python = getattr(sys, 'base_prefix', sys.prefix)
-    tcl_path = os.path.join(base_python, 'tcl', 'tcl8.6')
-    tk_path = os.path.join(base_python, 'tcl', 'tk8.6')
-    if os.path.isdir(tcl_path):
-        os.environ['TCL_LIBRARY'] = tcl_path
-    if os.path.isdir(tk_path):
-        os.environ['TK_LIBRARY'] = tk_path
-
-try:
-    ctypes.windll.shcore.SetProcessDpiAwareness(1)
-except Exception:
-    try:
-        ctypes.windll.user32.SetProcessDPIAware()
-    except Exception:
-        pass
-
-MINT_GREEN = "#93E9BE"
-TEXT_COLOR = "#1F2937"
-BG_GRAY = "#F0F2F5"
-WHITE = "#FFFFFF"
-SIDEBAR_BG = "#FAFAFA"
-GENTLE_GRAY_BORDER = "#E5E7EB"
+from theme import MINT_GREEN, TEXT_COLOR, BG_GRAY, WHITE
+from ui_helpers import create_tool_card
 
 
-class PDFCommandApp:
-    def __init__(self, root):
-        self.root = root
-        self.root.title("PDF Commander")
-        
-        try:
-            self.root.state('zoomed')
-        except:
-            self.root.geometry("1400x900")
-
-        try:
-            base_path = sys._MEIPASS if getattr(sys, 'frozen', False) else os.path.abspath(".")
-            self.root.iconbitmap(os.path.join(base_path, "Commander.ico"))
-        except:
-            pass
-        
-        self.root.configure(bg=BG_GRAY)
-
+class HomeFrame(tk.Frame):
+    def __init__(self, parent, controller):
+        super().__init__(parent, bg=BG_GRAY)
+        self.controller = controller
         self.setup_gui()
 
     def setup_gui(self):
-        sidebar = tk.Frame(self.root, bg=SIDEBAR_BG, width=220, highlightthickness=1, highlightbackground=GENTLE_GRAY_BORDER)
+        # ── Sidebar ──────────────────────────────────────────────────
+        sidebar_bg = "#1E293B"  # Slate dark background
+        sidebar = tk.Frame(self, bg=sidebar_bg, width=230)
         sidebar.pack(side=tk.LEFT, fill=tk.Y)
         sidebar.pack_propagate(False)
 
-        tk.Label(sidebar, text="PDF Commander", font=("Segoe UI", 16, "bold"), fg=TEXT_COLOR, bg=SIDEBAR_BG, pady=25).pack()
+        # App Brand Header (clean text typography, no emoji)
+        brand_frame = tk.Frame(sidebar, bg=sidebar_bg, pady=24, padx=18)
+        brand_frame.pack(fill=tk.X)
+        tk.Label(brand_frame, text="PDF COMMANDER", font=("Segoe UI", 12, "bold"),
+                 fg=WHITE, bg=sidebar_bg, anchor="w").pack(fill=tk.X)
+        tk.Label(brand_frame, text="Desktop Toolkit", font=("Segoe UI", 8),
+                 fg="#94A3B8", bg=sidebar_bg, anchor="w").pack(fill=tk.X, pady=(2, 0))
 
-        navs = [("🏠 Home", None), ("🔧 Tools", None), ("⏱ Tasks History", self.launch_dummy), ("⚙ Preferences", self.launch_dummy)]
-        for text, cmd in navs:
-            is_active = "Home" in text
-            bg_color = MINT_GREEN if is_active else SIDEBAR_BG
-            fg_color = "#000000" if is_active else "#6B7280"
-            font_type = ("Segoe UI", 11, "bold" if is_active else "normal")
-            
-            btn = tk.Label(sidebar, text=text, font=font_type, bg=bg_color, fg=fg_color, anchor="w", padx=25, pady=12, cursor="hand2")
-            btn.pack(fill=tk.X, padx=15, pady=4)
-            if cmd:
-                btn.bind("<Button-1>", lambda e, c=cmd: c())
+        # Subtle divider
+        tk.Frame(sidebar, bg="#334155", height=1).pack(fill=tk.X, padx=16, pady=(10, 16))
 
-        self.main_area = tk.Frame(self.root, bg=BG_GRAY)
-        self.main_area.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        
-        header_frame = tk.Frame(self.main_area, bg=WHITE, highlightthickness=1, highlightbackground=GENTLE_GRAY_BORDER, pady=30)
-        header_frame.pack(fill=tk.X, padx=50, pady=(50, 0))
-        tk.Label(header_frame, text="Tools Dashboard", font=("Segoe UI", 28, "bold"), bg=WHITE, fg=TEXT_COLOR).pack()
+        # Dashboard / Home button (active state)
+        nav_home = tk.Label(sidebar, text="  Dashboard", font=("Segoe UI", 10, "bold"),
+                            bg=MINT_GREEN, fg="#0F172A", anchor="w", padx=16, pady=10,
+                            cursor="hand2")
+        nav_home.pack(fill=tk.X, padx=12, pady=2)
 
-        tools_container = tk.Frame(self.main_area, bg=BG_GRAY, pady=40)
-        tools_container.pack(fill=tk.BOTH, expand=True, padx=50)
+        # Section Label: Quick Tools
+        tk.Label(sidebar, text="TOOLS", font=("Segoe UI", 8, "bold"),
+                 fg="#64748B", bg=sidebar_bg, anchor="w", padx=20).pack(fill=tk.X, pady=(16, 6))
 
-        tk.Label(tools_container, text="Available Tools", font=("Segoe UI", 18, "bold"), bg=BG_GRAY, fg=TEXT_COLOR).pack(pady=(0, 30))
-
-        grid_frame = tk.Frame(tools_container, bg=BG_GRAY)
-        grid_frame.pack()
-
-        self.create_highly_rounded_card(grid_frame, "Merge", self.launch_merger).pack(side=tk.LEFT, padx=20)
-        self.create_highly_rounded_card(grid_frame, "Editor", self.launch_editor).pack(side=tk.LEFT, padx=20)
-        self.create_highly_rounded_card(grid_frame, "Split", self.launch_splitter).pack(side=tk.LEFT, padx=20)
-        self.create_highly_rounded_card(grid_frame, "Viewer", self.launch_viewer).pack(side=tk.LEFT, padx=20)
-        self.create_highly_rounded_card(grid_frame, "Converter", self.launch_converter).pack(side=tk.LEFT, padx=20)
-
-
-    def create_highly_rounded_card(self, parent, title, command, width=200, height=120, radius=40):
-        canvas = tk.Canvas(parent, width=width, height=height, bg=BG_GRAY, highlightthickness=0, cursor="hand2")
-        x1, y1, x2, y2 = 4, 4, width-4, height-4
-        points = [
-            x1+radius, y1, x2-radius, y1, x2, y1, x2, y1+radius,
-            x2, y2-radius, x2, y2, x2-radius, y2, x1+radius, y2,
-            x1, y2, x1, y2-radius, x1, y1+radius, x1, y1
+        # Direct links to all functional tools in the sidebar (no emojis)
+        sidebar_tools = [
+            ("Merge PDFs", "merger"),
+            ("PDF Editor", "editor"),
+            ("Split PDF", "splitter"),
+            ("PDF Viewer", "viewer"),
+            ("PDF Converter", "converter"),
         ]
 
-        shape = canvas.create_polygon(points, smooth=True, fill="#F9FAFB", outline=GENTLE_GRAY_BORDER, width=2)
+        for text, frame_name in sidebar_tools:
+            btn = tk.Label(sidebar, text=f"  {text}", font=("Segoe UI", 9),
+                           bg=sidebar_bg, fg="#CBD5E1", anchor="w", padx=16, pady=8,
+                           cursor="hand2")
+            btn.pack(fill=tk.X, padx=12, pady=1)
 
-        txt = canvas.create_text(width/2, height/2, text=title, font=("Segoe UI", 16, "bold"), fill=TEXT_COLOR)
+            def make_hover(label, f_name):
+                label.bind("<Enter>", lambda _e: label.config(bg="#334155", fg=WHITE))
+                label.bind("<Leave>", lambda _e: label.config(bg=sidebar_bg, fg="#CBD5E1"))
 
-        def on_enter(e): 
-            canvas.itemconfig(shape, fill="#F3F4F6", outline=MINT_GREEN)
-            
-        def on_leave(e): 
-            canvas.itemconfig(shape, fill="#F9FAFB", outline=GENTLE_GRAY_BORDER)
-            
-        def on_click(e): command()
+                def on_sidebar_click(_e):
+                    label.config(bg="#0F766E", fg=WHITE)
+                    label.after(60, lambda: self.controller.show_frame(f_name))
+                    label.after(350, lambda: label.config(bg=sidebar_bg, fg="#CBD5E1"))
 
-        canvas.tag_bind(shape, "<Enter>", on_enter)
-        canvas.tag_bind(txt, "<Enter>", on_enter)
-        canvas.tag_bind(shape, "<Leave>", on_leave)
-        canvas.tag_bind(txt, "<Leave>", on_leave)
-        canvas.tag_bind(shape, "<Button-1>", on_click)
-        canvas.tag_bind(txt, "<Button-1>", on_click)
-        canvas.bind("<Button-1>", on_click)
-        return canvas
+                label.bind("<Button-1>", on_sidebar_click)
 
-    def launch_dummy(self):
-        messagebox.showinfo("Coming Soon", "This feature is currently under construction!")
+            make_hover(btn, frame_name)
 
-    def toggle_window(self, existing_window_attr, window_class, window_var_name):
-        self.root.withdraw()
-        
-        existing_window = getattr(self, existing_window_attr, None)
-        
-        if not existing_window or not existing_window.winfo_exists():
-            new_window = tk.Toplevel(self.root)
-            setattr(self, existing_window_attr, new_window)
-            setattr(self, window_var_name, window_class(new_window, main_app_window=self.root))
-        else:
-            existing_window.deiconify()
-            existing_window.lift()
-            try:
-                existing_window.state('zoomed')
-            except:
-                pass
+        # Bottom Version & Offline indicator
+        tk.Frame(sidebar, bg=sidebar_bg).pack(fill=tk.BOTH, expand=True)
+        footer = tk.Frame(sidebar, bg=sidebar_bg, pady=16, padx=18)
+        footer.pack(fill=tk.X, side=tk.BOTTOM)
+        tk.Label(footer, text="Local & Offline", font=("Segoe UI", 8, "bold"),
+                 fg="#10B981", bg=sidebar_bg, anchor="w").pack(fill=tk.X)
+        tk.Label(footer, text="Version 1.0.0", font=("Segoe UI", 8),
+                 fg="#64748B", bg=sidebar_bg, anchor="w").pack(fill=tk.X, pady=(2, 0))
 
-    def launch_editor(self):
-        self.toggle_window('editor_window', ModernPDFEditor, 'editor_app')
-    
-    def launch_merger(self):
-        self.toggle_window('merger_window', ModernPDFMerger, 'merger_app')
-            
-    def launch_splitter(self):
-        self.toggle_window('splitter_window', ModernPDFSplitter, 'splitter_app')
-        
-    def launch_converter(self):
-        self.toggle_window('converter_window', ModernPDFConverter, 'converter_app')
+        # ── Main Content Area ────────────────────────────────────────
+        main_area = tk.Frame(self, bg=BG_GRAY)
+        main_area.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-    def launch_viewer(self):
-        if not hasattr(self, 'viewer_window') or not self.viewer_window.winfo_exists():
-            self.root.withdraw()
+        # Header Title
+        header_container = tk.Frame(main_area, bg=BG_GRAY, pady=36, padx=50)
+        header_container.pack(fill=tk.X)
 
-            self.viewer_window = tk.Toplevel(self.root)
-            
-            self.viewer_app = ModernPDFViewer(self.viewer_window, main_app_window=self.root)
-            
-            try:
-                self.viewer_window.state('zoomed')
-            except:
-                pass
-        else:
-            self.root.withdraw()
-            self.viewer_window.deiconify()
-            self.viewer_window.lift()
+        tk.Label(header_container, text="Welcome to PDF Commander",
+                 font=("Segoe UI", 24, "bold"), bg=BG_GRAY, fg=TEXT_COLOR,
+                 anchor="w").pack(fill=tk.X)
+        tk.Label(header_container,
+                 text="Select a tool below to edit, merge, split, view, or convert your PDF documents.",
+                 font=("Segoe UI", 11), bg=BG_GRAY, fg="#64748B",
+                 anchor="w").pack(fill=tk.X, pady=(4, 0))
+
+        # ── Tools Grid Container ─────────────────────────────────────
+        grid_container = tk.Frame(main_area, bg=BG_GRAY)
+        grid_container.pack(fill=tk.BOTH, expand=True, padx=40, pady=(0, 40))
+
+        # Center rows and columns
+        grid_container.grid_rowconfigure(0, weight=1)
+        grid_container.grid_rowconfigure(3, weight=1)
+        grid_container.grid_columnconfigure(0, weight=1)
+        grid_container.grid_columnconfigure(4, weight=1)
+
+        tool_defs = [
+            ("Merge PDFs", "Combine multiple PDF documents into a single file in any order.", "merger", "Merge"),
+            ("PDF Editor", "Add text, draw shapes, and insert images or signatures onto pages.", "editor", "Edit"),
+            ("Split PDF", "Extract specific pages or page ranges into a new standalone PDF.", "splitter", "Split"),
+            ("PDF Viewer", "Open, read, and browse PDF documents with fluid navigation.", "viewer", "View"),
+            ("PDF Converter", "Convert Word documents (.docx) and image files directly to PDF.", "converter", "Convert"),
+        ]
+
+        # Row 1: Merge, Editor, Split
+        for col_idx, (title, desc, frame_name, badge) in enumerate(tool_defs[:3]):
+            card = create_tool_card(
+                grid_container, title, desc,
+                lambda f=frame_name: self.controller.show_frame(f),
+                badge=badge, width=260, height=155
+            )
+            card.grid(row=1, column=col_idx + 1, padx=12, pady=12, sticky="nsew")
+
+        # Row 2 container to center the 2 remaining cards (Viewer, Converter)
+        row2_frame = tk.Frame(grid_container, bg=BG_GRAY)
+        row2_frame.grid(row=2, column=1, columnspan=3, pady=12)
+
+        for title, desc, frame_name, badge in tool_defs[3:]:
+            card = create_tool_card(
+                row2_frame, title, desc,
+                lambda f=frame_name: self.controller.show_frame(f),
+                badge=badge, width=260, height=155
+            )
+            card.pack(side=tk.LEFT, padx=16)
+
+
+# Backward compatibility aliases
+ModernPDFHome = HomeFrame
+
+
+def PDFCommandApp(root, startup_pdf=None):
+    from app_controller import PDFCommanderApp
+    return PDFCommanderApp(root, startup_pdf=startup_pdf)
+
 
 if __name__ == "__main__":
-    root = tk.Tk()
-    
-    if len(sys.argv) > 1 and sys.argv[1].lower().endswith('.pdf'):
-        root.withdraw() 
-        
-        viewer_window = tk.Toplevel(root)
-        pdf_path = sys.argv[1]
-        try:
-            viewer_app = ModernPDFViewer(viewer_window, root, startup_pdf=pdf_path)
-        except NameError:
-             messagebox.showerror("Error", "ModernPDFViewer class could not be loaded. Please ensure PDFViewer.py is in this folder.")
-             root.destroy()
-        except TypeError:
-             messagebox.showerror("Error", "Your ModernPDFViewer is outdated and does not support automatic loading. Please ask for the updated version.")
-             root.destroy()
+    if not getattr(sys, "frozen", False):
+        base_python = getattr(sys, "base_prefix", sys.prefix)
+        tcl_path = os.path.join(base_python, "tcl", "tcl8.6")
+        tk_path = os.path.join(base_python, "tcl", "tk8.6")
+        if os.path.isdir(tcl_path):
+            os.environ["TCL_LIBRARY"] = tcl_path
+        if os.path.isdir(tk_path):
+            os.environ["TK_LIBRARY"] = tk_path
 
-    else:
-        app = PDFCommandApp(root) 
-        
+    if "Home" not in sys.modules:
+        sys.modules["Home"] = sys.modules["__main__"]
+
+    from app_controller import PDFCommanderApp
+
+    root = tk.Tk()
+
+    startup_pdf = None
+    if len(sys.argv) > 1 and sys.argv[1].lower().endswith(".pdf"):
+        startup_pdf = sys.argv[1]
+
+    app = PDFCommanderApp(root, startup_pdf=startup_pdf)
     root.mainloop()
