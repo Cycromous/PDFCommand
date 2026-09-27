@@ -45,15 +45,11 @@ DisableProgramGroupPage=yes
 ; Uncomment the following line to run in non administrative install mode (install for current user only).
 ;PrivilegesRequired=lowest
 PrivilegesRequiredOverridesAllowed=dialog
-OutputDir=C:\Users\johnr\OneDrive\Desktop
-OutputBaseFilename=PDFCommand Setup
-SetupIconFile=C:\Users\johnr\OneDrive\Documents\Repositories\Personal\PDFCommand\Commander.ico
 OutputDir=Output
 OutputBaseFilename=PDFCommand-Setup
 SetupIconFile=Commander.ico
 SolidCompression=yes
 WizardStyle=modern zircon
-WizardStyle=modern
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
@@ -62,9 +58,6 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-Source: "C:\Users\johnr\OneDrive\Documents\Repositories\Personal\PDFCommand\dist\Home\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Users\johnr\OneDrive\Documents\Repositories\Personal\PDFCommand\dist\Home\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
-; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 Source: "dist\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
 Source: "Commander.ico"; DestDir: "{app}"; Flags: ignoreversion
 

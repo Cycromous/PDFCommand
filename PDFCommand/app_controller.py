@@ -59,14 +59,27 @@ class PDFCommanderApp:
         self.root = root
         self.root.title("PDF Commander")
 
+        # DPI Awareness for crisp UI and accurate screen metrics
         try:
-            self.root.state("zoomed")
+            ctypes.windll.shcore.SetProcessDpiAwareness(1)
         except Exception:
-            self.root.geometry("1400x900")
+            try:
+                ctypes.windll.user32.SetProcessDPIAware()
+            except Exception:
+                pass
+
+        # Center the window on whatever screen it opens on
+        self.root.update_idletasks()
+        screen_w = self.root.winfo_screenwidth()
+        screen_h = self.root.winfo_screenheight()
+        win_w = min(1400, int(screen_w * 0.9))
+        win_h = min(900, int(screen_h * 0.9))
+        pos_x = max(0, (screen_w - win_w) // 2)
+        pos_y = max(0, (screen_h - win_h) // 2)
+        self.root.geometry(f"{win_w}x{win_h}+{pos_x}+{pos_y}")
 
         try:
-            base_path = sys._MEIPASS if getattr(sys, "frozen", False) 
-        else os.path.dirname(os.path.abspath(__file__))
+            base_path = sys._MEIPASS if getattr(sys, "frozen", False) else os.path.dirname(os.path.abspath(__file__))
             icon_path = os.path.join(base_path, "Commander.ico")
             if os.path.exists(icon_path):
                 self.root.iconbitmap(icon_path)

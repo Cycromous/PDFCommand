@@ -1,12 +1,10 @@
 import os
-import sys
 import tkinter as tk
 from tkinter import filedialog, messagebox
 
 import fitz  # PyMuPDF
 
-from theme import BG_GRAY, TOOLBAR_COLOR, TEXT_COLOR
-from ui_helpers import create_rounded_button
+from theme import BG_GRAY, MINT_GREEN, TEXT_COLOR, WHITE
 
 try:
     from docx2pdf import convert as convert_docx
@@ -24,50 +22,82 @@ class ConverterFrame(tk.Frame):
     def go_home(self):
         self.controller.show_frame("home")
 
+    def go_to(self, frame_name):
+        self.controller.show_frame(frame_name)
+
+    def go_to(self, frame_name):
+        self.controller.show_frame(frame_name)
     def setup_gui(self):
-        toolbar = tk.Frame(self, bg=TOOLBAR_COLOR, bd=0)
-        toolbar.pack(fill=tk.X, side=tk.TOP, pady=(0, 0))
-
-        inner_toolbar = tk.Frame(toolbar, bg=TOOLBAR_COLOR, pady=12, padx=15)
-        inner_toolbar.pack(fill=tk.X)
-
-        tk.Button(inner_toolbar, text="Home", command=self.go_home, bg=TOOLBAR_COLOR, fg=TEXT_COLOR,
-                  font=("Segoe UI", 10, "bold"), bd=0, activebackground=TOOLBAR_COLOR,
-                  cursor="hand2").pack(side=tk.LEFT, padx=(0, 15))
-
-        btn_add = create_rounded_button(inner_toolbar, "Add Files", "#FFFFFF", "#374151",
-                                         self.add_files, width=140, canvas_bg=TOOLBAR_COLOR)
-        btn_add[0].pack(side=tk.LEFT, padx=(0, 10))
-
-        btn_clear = create_rounded_button(inner_toolbar, "Clear List", "#FFFFFF", "#DC2626",
-                                           self.clear_files, width=140, canvas_bg=TOOLBAR_COLOR)
-        btn_clear[0].pack(side=tk.LEFT, padx=(0, 10))
-
-        self.btn_convert = create_rounded_button(inner_toolbar, "Convert to PDF", "#111827", "#FFFFFF",
-                                                  self.process_conversion, width=160, canvas_bg=TOOLBAR_COLOR)
-        self.btn_convert[0].pack(side=tk.RIGHT, padx=5)
-
-        self.lbl_status = tk.Label(inner_toolbar, text="", bg=TOOLBAR_COLOR, fg=TEXT_COLOR,
-                                    font=("Segoe UI", 10, "bold"))
-        self.lbl_status.pack(side=tk.RIGHT, padx=15)
-
-        content_frame = tk.Frame(self, bg=BG_GRAY, pady=40, padx=50)
-        content_frame.pack(fill=tk.BOTH, expand=True)
-
-        tk.Label(content_frame, text="Files to Convert", font=("Segoe UI", 18, "bold"), bg=BG_GRAY,
-                 fg=TEXT_COLOR).pack(anchor="w", pady=(0, 10))
-
-        list_frame = tk.Frame(content_frame, bg="#FFFFFF", highlightthickness=1, highlightbackground="#E5E7EB")
-        list_frame.pack(fill=tk.BOTH, expand=True)
-
+        # Sidebar setup
+        sidebar = tk.Frame(self, bg="#1E293B", width=230)
+        sidebar.pack(side=tk.LEFT, fill=tk.Y)
+        sidebar.pack_propagate(False)
+        # Brand header
+        brand_frame = tk.Frame(sidebar, bg="#1E293B")
+        brand_frame.pack(fill=tk.X, pady=(30, 20), padx=20)
+        tk.Label(brand_frame, text="PDF COMMANDER", font=("Segoe UI", 16, "bold"), bg="#1E293B", fg="#F8FAFC").pack(anchor="w")
+        tk.Label(brand_frame, text="Desktop Toolkit", font=("Segoe UI", 10), bg="#1E293B", fg="#94A3B8").pack(anchor="w")
+        # Divider
+        tk.Frame(sidebar, bg="#334155", height=1).pack(fill=tk.X, padx=20, pady=(0, 20))
+        # Current Tool
+        self._create_nav_item(sidebar, "PDF Converter", lambda: None, active=True)
+        
+        # Tool Actions
+        tk.Label(sidebar, text="ACTIONS", font=("Segoe UI", 9, "bold"), bg="#1E293B", fg="#64748B").pack(anchor="w", padx=20, pady=(15, 5))
+        self._create_nav_item(sidebar, "Add Files", self.add_files)
+        self._create_nav_item(sidebar, "Clear List", self.clear_files)
+        self._create_nav_item(sidebar, "Convert to PDF", self.process_conversion)
+        # Divider
+        tk.Frame(sidebar, bg="#334155", height=1).pack(fill=tk.X, padx=20, pady=20)
+        # Navigation
+        tk.Label(sidebar, text="NAVIGATION", font=("Segoe UI", 9, "bold"), bg="#1E293B", fg="#64748B").pack(anchor="w", padx=20, pady=(0, 5))
+        self._create_nav_item(sidebar, "Dashboard", self.go_home)
+        self._create_nav_item(sidebar, "Merge PDFs", lambda: self.go_to("merger"))
+        self._create_nav_item(sidebar, "PDF Editor", lambda: self.go_to("editor"))
+        self._create_nav_item(sidebar, "Split PDF", lambda: self.go_to("splitter"))
+        self._create_nav_item(sidebar, "PDF Viewer", lambda: self.go_to("viewer"))
+        # Footer
+        footer_frame = tk.Frame(sidebar, bg="#1E293B")
+        footer_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=20, padx=20)
+        tk.Label(footer_frame, text="Local & Offline", font=("Segoe UI", 9), bg="#1E293B", fg="#059669").pack(anchor="w")
+        tk.Label(footer_frame, text="Version 1.0.0", font=("Segoe UI", 8), bg="#1E293B", fg="#64748B").pack(anchor="w")
+        # Main content area
+        content_frame = tk.Frame(self, bg=BG_GRAY)
+        content_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        header_frame = tk.Frame(content_frame, bg=BG_GRAY)
+        header_frame.pack(fill=tk.X, pady=(40, 20), padx=50)
+        tk.Label(header_frame, text="PDF Converter", font=("Segoe UI", 24, "bold"), bg=BG_GRAY, fg=TEXT_COLOR).pack(anchor="w")
+        tk.Label(header_frame, text="Convert Word documents and images to PDF.", font=("Segoe UI", 11), bg=BG_GRAY, fg="#64748B").pack(anchor="w", pady=(5, 0))
+        self.lbl_status = tk.Label(header_frame, text="", bg=BG_GRAY, fg="#059669", font=("Segoe UI", 11, "bold"))
+        self.lbl_status.pack(anchor="w", pady=(10, 0))
+        list_frame = tk.Frame(content_frame, bg=WHITE, highlightthickness=1, highlightbackground="#E5E7EB", bd=0)
+        list_frame.pack(fill=tk.BOTH, expand=True, padx=50, pady=(0, 50))
         scrollbar = tk.Scrollbar(list_frame)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-
         self.listbox = tk.Listbox(list_frame, yscrollcommand=scrollbar.set, font=("Segoe UI", 11),
-                                   bg="#FFFFFF", fg="#374151", selectbackground="#A8DFC5",
-                                   selectforeground="#000000", relief=tk.FLAT, highlightthickness=0)
+                                   bg=WHITE, fg="#374151", selectbackground="#E5E7EB",
+                                   selectforeground="#1F2937", relief=tk.FLAT, highlightthickness=0)
         self.listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=10, pady=10)
         scrollbar.config(command=self.listbox.yview)
+    def _create_nav_item(self, parent, text, command, active=False):
+        bg_color = MINT_GREEN if active else "#1E293B"
+        fg_color = "#1F2937" if active else "#CBD5E1"
+        frame = tk.Frame(parent, bg=bg_color)
+        frame.pack(fill=tk.X, padx=10, pady=2)
+        btn = tk.Label(frame, text=text, font=("Segoe UI", 10, "bold" if active else "normal"),
+                       bg=bg_color, fg=fg_color, anchor="w", padx=10, pady=8, cursor="hand2")
+        btn.pack(fill=tk.BOTH, expand=True)
+        btn.bind("<Button-1>", lambda e: command())
+        if not active:
+            btn.bind("<Enter>", lambda e, f=frame, b=btn: self._on_hover(f, b, True))
+            btn.bind("<Leave>", lambda e, f=frame, b=btn: self._on_hover(f, b, False))
+    def _on_hover(self, frame, btn, hovering):
+        if hovering:
+            frame.configure(bg="#334155")
+            btn.configure(bg="#334155", fg="#FFFFFF")
+        else:
+            frame.configure(bg="#1E293B")
+            btn.configure(bg="#1E293B", fg="#CBD5E1")
 
     def add_files(self):
         filetypes = [
@@ -139,5 +169,4 @@ if __name__ == "__main__":
     root = tk.Tk()
     app = PDFCommanderApp(root)
     app.show_frame("converter")
-    root.mainloop()
     root.mainloop()

@@ -5,7 +5,7 @@ from tkinter import filedialog, messagebox
 
 import fitz  # PyMuPDF
 
-from theme import BG_GRAY, TOOLBAR_COLOR, TOOLBAR_DIVIDER, TEXT_COLOR, NAV_BG
+from theme import BG_GRAY, MINT_GREEN, WHITE, TEXT_COLOR
 from ui_helpers import create_rounded_button
 
 
@@ -21,69 +21,86 @@ class ViewerFrame(tk.Frame):
         self.total_pages = 0
 
         self.page_image = None
+        self.after_id = None
 
         self.setup_gui()
 
         if startup_pdf:
             self.load_specific_pdf(startup_pdf)
 
+    def nav_to(self, page_name):
+        self.controller.show_frame(page_name)
+
     def go_home(self):
         self.controller.show_frame("home")
-
+    def create_sidebar_button(self, parent, text, is_active=False, command=None):
+        btn = tk.Label(
+            parent, text=text,
+            bg=MINT_GREEN if is_active else "#1E293B",
+            fg="#1F2937" if is_active else "#CBD5E1",
+            font=("Segoe UI", 11, "bold" if is_active else "normal"),
+            anchor="w", padx=20, pady=10, cursor="hand2"
+        )
+        btn.pack(fill=tk.X, pady=2, padx=10)
+        if not is_active:
+            btn.bind("<Enter>", lambda e: btn.config(bg="#334155", fg="#FFFFFF"))
+            btn.bind("<Leave>", lambda e: btn.config(bg="#1E293B", fg="#CBD5E1"))
+        if command:
+            btn.bind("<Button-1>", lambda e: command())
+        return btn
     def setup_gui(self):
-        toolbar = tk.Frame(self, bg=TOOLBAR_COLOR, bd=0)
-        toolbar.pack(fill=tk.X, side=tk.TOP)
-
-        inner = tk.Frame(toolbar, bg=TOOLBAR_COLOR, pady=12, padx=15)
-        inner.pack(fill=tk.X)
-
-        tk.Button(
-            inner, text="⬅ Home", command=self.go_home, bg=TOOLBAR_COLOR, fg=TEXT_COLOR,
-            font=("Segoe UI", 10, "bold"), bd=0, activebackground=TOOLBAR_COLOR,
-            cursor="hand2"
-        ).pack(side=tk.LEFT, padx=(0, 15))
-
-        self.btn_open = create_rounded_button(
-            inner, "📂 Open PDF", "#FFFFFF", "#374151",
-            self.open_pdf, width=140
-        )
-        self.btn_open[0].pack(side=tk.LEFT, padx=(0, 10))
-
-        tk.Frame(inner, bg=TOOLBAR_DIVIDER, width=2).pack(side=tk.LEFT, fill=tk.Y, pady=5, padx=10)
-
-        self.btn_edit = create_rounded_button(
-            inner, "✏️ Edit This PDF", "#111827", "#FFFFFF",
-            self.open_in_editor, width=160
-        )
-        self.btn_edit[0].pack(side=tk.LEFT, padx=5)
-
-        # Nav Bar
-        self.nav_frame = tk.Frame(self, bg=NAV_BG, pady=8)
-        self.nav_frame.pack(fill=tk.X)
-
-        self.btn_prev = create_rounded_button(
-            self.nav_frame, "◀ Previous", "#FFFFFF", "#9CA3AF",
-            self.prev_page, width=110, height=32
-        )
-        self.btn_prev[0].pack(side=tk.LEFT, padx=20)
-
-        self.lbl_page = tk.Label(
-            self.nav_frame, text="No PDF Loaded", font=("Segoe UI", 10, "bold"),
-            bg=NAV_BG, fg="#374151"
-        )
-        self.lbl_page.pack(side=tk.LEFT, expand=True)
-
-        self.btn_next = create_rounded_button(
-            self.nav_frame, "Next ▶", "#FFFFFF", "#9CA3AF",
-            self.next_page, width=110, height=32
-        )
-        self.btn_next[0].pack(side=tk.RIGHT, padx=20)
-
-        # Workspace Canvas
-        canvas_frame = tk.Frame(self, bg=BG_GRAY)
-        canvas_frame.pack(expand=True, fill=tk.BOTH, padx=20, pady=20)
-        self.canvas = tk.Canvas(canvas_frame, bg=BG_GRAY, bd=0, highlightthickness=0)
-        self.canvas.pack(expand=True, fill=tk.BOTH)
+        sidebar = tk.Frame(self, bg="#1E293B", width=230)
+        sidebar.pack(side=tk.LEFT, fill=tk.Y)
+        sidebar.pack_propagate(False)
+        brand_lbl = tk.Label(sidebar, text="PDF COMMANDER", bg="#1E293B", fg=WHITE,
+                             font=("Segoe UI", 16, "bold"), anchor="w", padx=20, pady=15)
+        brand_lbl.pack(fill=tk.X)
+        sub_lbl = tk.Label(sidebar, text="Desktop Toolkit", bg="#1E293B", fg="#94A3B8",
+                           font=("Segoe UI", 9), anchor="w", padx=20)
+        sub_lbl.pack(fill=tk.X, pady=(0, 10))
+        tk.Frame(sidebar, bg="#334155", height=1).pack(fill=tk.X, padx=20, pady=15)
+        self.create_sidebar_button(sidebar, "Open PDF", command=self.open_pdf)
+        self.create_sidebar_button(sidebar, "Edit This PDF", command=self.open_in_editor)
+        
+        tk.Frame(sidebar, bg="#334155", height=1).pack(fill=tk.X, padx=20, pady=15)
+        nav_lbl = tk.Label(sidebar, text="PAGE NAVIGATION", bg="#1E293B", fg="#64748B",
+                           font=("Segoe UI", 8, "bold"), anchor="w", padx=20)
+        nav_lbl.pack(fill=tk.X, pady=(0, 6))
+        nav_ctrl_frame = tk.Frame(sidebar, bg="#1E293B")
+        nav_ctrl_frame.pack(fill=tk.X, padx=14)
+        self.btn_prev = tk.Label(nav_ctrl_frame, text="◀ Prev", bg="#334155", fg="#CBD5E1", 
+                                 font=("Segoe UI", 9, "bold"), cursor="hand2", padx=8, pady=5)
+        self.btn_prev.pack(side=tk.LEFT, expand=True, fill=tk.X, padx=(0, 4))
+        self.btn_prev.bind("<Button-1>", lambda e: self.prev_page())
+        self.btn_prev.bind("<Enter>", lambda e: self.btn_prev.config(bg="#475569"))
+        self.btn_prev.bind("<Leave>", lambda e: self.btn_prev.config(bg="#334155"))
+        self.btn_next = tk.Label(nav_ctrl_frame, text="Next ▶", bg="#334155", fg="#CBD5E1", 
+                                 font=("Segoe UI", 9, "bold"), cursor="hand2", padx=8, pady=5)
+        self.btn_next.pack(side=tk.LEFT, expand=True, fill=tk.X, padx=(4, 0))
+        self.btn_next.bind("<Button-1>", lambda e: self.next_page())
+        self.btn_next.bind("<Enter>", lambda e: self.btn_next.config(bg="#475569"))
+        self.btn_next.bind("<Leave>", lambda e: self.btn_next.config(bg="#334155"))
+        self.lbl_page = tk.Label(sidebar, text="No PDF Loaded", font=("Segoe UI", 9, "bold"),
+                                 bg="#1E293B", fg="#94A3B8", pady=6)
+        self.lbl_page.pack(fill=tk.X)
+        tk.Frame(sidebar, bg="#334155", height=1).pack(fill=tk.X, padx=20, pady=15)
+        nav_label = tk.Label(sidebar, text="NAVIGATION", bg="#1E293B", fg="#64748B",
+                             font=("Segoe UI", 8, "bold"), anchor="w", padx=20)
+        nav_label.pack(fill=tk.X, pady=(0, 6))
+        self.create_sidebar_button(sidebar, "Dashboard", command=self.go_home)
+        self.create_sidebar_button(sidebar, "PDF Viewer", is_active=True)
+        self.create_sidebar_button(sidebar, "Merge PDFs", command=lambda: self.nav_to("merger"))
+        self.create_sidebar_button(sidebar, "PDF Editor", command=lambda: self.nav_to("editor"))
+        self.create_sidebar_button(sidebar, "Split PDF", command=lambda: self.nav_to("splitter"))
+        self.create_sidebar_button(sidebar, "PDF Converter", command=lambda: self.nav_to("converter"))
+        footer = tk.Frame(sidebar, bg="#1E293B")
+        footer.pack(side=tk.BOTTOM, fill=tk.X, pady=16)
+        tk.Label(footer, text="Local & Offline", bg="#1E293B", fg="#10B981", font=("Segoe UI", 8, "bold")).pack()
+        tk.Label(footer, text="Version 1.0.0", bg="#1E293B", fg="#64748B", font=("Segoe UI", 8)).pack()
+        self.canvas_frame = tk.Frame(self, bg=BG_GRAY)
+        self.canvas_frame.pack(side=tk.LEFT, expand=True, fill=tk.BOTH)
+        self.canvas = tk.Canvas(self.canvas_frame, bg=BG_GRAY, bd=0, highlightthickness=0)
+        self.canvas.pack(expand=True, fill=tk.BOTH, padx=20, pady=20)
 
     def open_pdf(self):
         path = filedialog.askopenfilename(filetypes=[("PDF Files", "*.pdf")])
@@ -111,6 +128,11 @@ class ViewerFrame(tk.Frame):
         if self.pdf_doc:
             self.render_page()
 
+    def render_page_delayed(self):
+        if self.after_id:
+            self.after_cancel(self.after_id)
+        self.after_id = self.after(200, self.render_page)
+
     def render_page(self):
         if not self.pdf_doc:
             return
@@ -118,22 +140,16 @@ class ViewerFrame(tk.Frame):
 
         self.lbl_page.config(text=f"Page {self.current_page_num + 1} of {self.total_pages}")
 
-        # Update navigation buttons
-        prev_canvas, _, prev_txt = self.btn_prev
+        # Update navigation buttons state
         if self.current_page_num > 0:
-            prev_canvas.itemconfig(prev_txt, fill="#1F2937")
-            prev_canvas.config(cursor="hand2")
+            self.btn_prev.config(fg="#FFFFFF")
         else:
-            prev_canvas.itemconfig(prev_txt, fill="#9CA3AF")
-            prev_canvas.config(cursor="arrow")
+            self.btn_prev.config(fg="#64748B")
 
-        next_canvas, _, next_txt = self.btn_next
         if self.current_page_num < self.total_pages - 1:
-            next_canvas.itemconfig(next_txt, fill="#1F2937")
-            next_canvas.config(cursor="hand2")
+            self.btn_next.config(fg="#FFFFFF")
         else:
-            next_canvas.itemconfig(next_txt, fill="#9CA3AF")
-            next_canvas.config(cursor="arrow")
+            self.btn_next.config(fg="#64748B")
 
         self.canvas.update_idletasks()
         canvas_height = self.canvas.winfo_height()
@@ -149,7 +165,7 @@ class ViewerFrame(tk.Frame):
 
         canvas_width = self.canvas.winfo_width()
         if canvas_width <= 1:
-            canvas_width = self.root.winfo_screenwidth()
+            canvas_width = self.root.winfo_screenwidth() - 230
 
         x_offset = max(0, (canvas_width - pix.width) // 2)
 
