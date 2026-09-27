@@ -65,8 +65,11 @@ class PDFCommanderApp:
             self.root.geometry("1400x900")
 
         try:
-            base_path = sys._MEIPASS if getattr(sys, "frozen", False) else os.path.abspath(".")
-            self.root.iconbitmap(os.path.join(base_path, "Commander.ico"))
+            base_path = sys._MEIPASS if getattr(sys, "frozen", False) 
+        else os.path.dirname(os.path.abspath(__file__))
+            icon_path = os.path.join(base_path, "Commander.ico")
+            if os.path.exists(icon_path):
+                self.root.iconbitmap(icon_path)
         except Exception:
             pass
 

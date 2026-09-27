@@ -5,8 +5,7 @@ from tkinter import filedialog, messagebox
 
 import fitz  # PyMuPDF
 
-from theme import BG_GRAY, TOOLBAR_COLOR, TEXT_COLOR
-from ui_helpers import create_rounded_button
+from theme import BG_GRAY, TEXT_COLOR
 
 
 class SplitterFrame(tk.Frame):
@@ -20,29 +19,94 @@ class SplitterFrame(tk.Frame):
     def go_home(self):
         self.controller.show_frame("home")
 
+    def go_to(self, view_name):
+        self.controller.show_frame(view_name)
+
     def setup_gui(self):
-        toolbar = tk.Frame(self, bg=TOOLBAR_COLOR, bd=0)
-        toolbar.pack(fill=tk.X, side=tk.TOP)
+        # Sidebar
+        sidebar = tk.Frame(self, bg="#1E293B", width=230)
+        sidebar.pack(side=tk.LEFT, fill=tk.Y)
+        sidebar.pack_propagate(False)
 
-        inner = tk.Frame(toolbar, bg=TOOLBAR_COLOR, pady=12, padx=15)
-        inner.pack(fill=tk.X)
+        # Brand header
+        brand_frame = tk.Frame(sidebar, bg="#1E293B", pady=20)
+        brand_frame.pack(fill=tk.X)
+        tk.Label(brand_frame, text="PDF COMMANDER", font=("Segoe UI", 16, "bold"), bg="#1E293B", fg="#FFFFFF").pack()
+        tk.Label(brand_frame, text="Desktop Toolkit", font=("Segoe UI", 10), bg="#1E293B", fg="#64748B").pack()
 
-        tk.Button(
-            inner, text="⬅ Home", command=self.go_home, bg=TOOLBAR_COLOR, fg=TEXT_COLOR,
-            font=("Segoe UI", 10, "bold"), bd=0, cursor="hand2"
-        ).pack(side=tk.LEFT, padx=(0, 15))
+        # Divider
+        tk.Frame(sidebar, bg="#334155", height=1).pack(fill=tk.X, padx=20, pady=10)
 
-        self.btn_load = create_rounded_button(
-            inner, "📂 Load PDF", "#FFFFFF", "#374151",
-            self.load_pdf, canvas_bg=TOOLBAR_COLOR
+        # Active Tool
+        active_btn = tk.Button(
+            sidebar, text="Split PDF", font=("Segoe UI", 11, "bold"),
+            bg="#93E9BE", fg="#1F2937", bd=0, pady=10, cursor="hand2", anchor="w", padx=20
         )
-        self.btn_load[0].pack(side=tk.LEFT, padx=10)
+        active_btn.pack(fill=tk.X, padx=10, pady=5)
 
-        self.btn_split = create_rounded_button(
-            inner, "✂ Split & Save", "#111827", "#FFFFFF",
-            self.split_pdf, canvas_bg=TOOLBAR_COLOR
+        # Action buttons
+        load_btn = tk.Button(
+            sidebar, text="📂 Load PDF", font=("Segoe UI", 11),
+            bg="#1E293B", fg="#CBD5E1", bd=0, pady=8, cursor="hand2", anchor="w", padx=20,
+            command=self.load_pdf
         )
-        self.btn_split[0].pack(side=tk.RIGHT, padx=5)
+        load_btn.pack(fill=tk.X, padx=10, pady=2)
+
+        def on_enter_load(e, btn=load_btn): btn.config(bg="#334155", fg="#FFFFFF")
+        def on_leave_load(e, btn=load_btn): btn.config(bg="#1E293B", fg="#CBD5E1")
+        load_btn.bind("<Enter>", on_enter_load)
+        load_btn.bind("<Leave>", on_leave_load)
+
+        split_btn = tk.Button(
+            sidebar, text="✂ Split & Save", font=("Segoe UI", 11),
+            bg="#1E293B", fg="#CBD5E1", bd=0, pady=8, cursor="hand2", anchor="w", padx=20,
+            command=self.split_pdf
+        )
+        split_btn.pack(fill=tk.X, padx=10, pady=2)
+
+        def on_enter_split(e, btn=split_btn): btn.config(bg="#334155", fg="#FFFFFF")
+        def on_leave_split(e, btn=split_btn): btn.config(bg="#1E293B", fg="#CBD5E1")
+        split_btn.bind("<Enter>", on_enter_split)
+        split_btn.bind("<Leave>", on_leave_split)
+
+        # Divider
+        tk.Frame(sidebar, bg="#334155", height=1).pack(fill=tk.X, padx=20, pady=15)
+
+        # Navigation Links
+        nav_items = [
+            ("Home", "home"),
+            ("Merge PDF", "merger"),
+            ("Edit PDF", "editor"),
+            ("View PDF", "viewer"),
+            ("Convert PDF", "converter")
+        ]
+
+        for text, view_name in nav_items:
+            btn = tk.Button(
+                sidebar, text=text, font=("Segoe UI", 11),
+                bg="#1E293B", fg="#CBD5E1", bd=0, pady=8, cursor="hand2", anchor="w", padx=20,
+                command=lambda v=view_name: self.go_to(v)
+            )
+            btn.pack(fill=tk.X, padx=10, pady=2)
+            
+            btn.bind("<Enter>", lambda e, b=btn: b.config(bg="#334155", fg="#FFFFFF"))
+            btn.bind("<Leave>", lambda e, b=btn: b.config(bg="#1E293B", fg="#CBD5E1"))
+
+        # Footer
+        footer_frame = tk.Frame(sidebar, bg="#1E293B")
+        footer_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=20)
+        tk.Label(footer_frame, text="Local & Offline", font=("Segoe UI", 9), bg="#1E293B", fg="#64748B").pack()
+        tk.Label(footer_frame, text="Version 1.0.0", font=("Segoe UI", 9), bg="#1E293B", fg="#64748B").pack()
+
+        # Main content area
+        main_content = tk.Frame(self, bg=BG_GRAY)
+        main_content.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        # Header
+        header_frame = tk.Frame(main_content, bg=BG_GRAY, pady=30, padx=40)
+        header_frame.pack(fill=tk.X)
+        tk.Label(header_frame, text="Split PDF", font=("Segoe UI", 24, "bold"), bg=BG_GRAY, fg=TEXT_COLOR, anchor="w").pack(fill=tk.X)
+        tk.Label(header_frame, text="Extract specific pages or page ranges into a new PDF.", font=("Segoe UI", 11), bg=BG_GRAY, fg="#64748B", anchor="w").pack(fill=tk.X, pady=(5, 0))
 
         # Content Area
         self.work_area = tk.Frame(self, bg=BG_GRAY, pady=50)
